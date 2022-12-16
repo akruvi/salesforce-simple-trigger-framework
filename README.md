@@ -4,7 +4,7 @@ A simplified trigger framework to extract logic from triggers, with uni-directio
 
 ## How do I make a trigger?
 
-Check out our test classes and triggers for samples.
+Check out our test classes and triggers for samples. I will populate this document with some examples if and when I have time.
 
 ## Who wasted their time writing this garbage?
 
