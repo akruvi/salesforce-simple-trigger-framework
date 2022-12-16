@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>All_Trigger_Controllers</fullName>
+    <columns>MasterLabel</columns>
+    <columns>Before_Insert__c</columns>
+    <columns>Before_Update__c</columns>
+    <columns>Before_Delete__c</columns>
+    <columns>Before_Undelete__c</columns>
+    <columns>After_Insert__c</columns>
+    <columns>After_Update__c</columns>
+    <columns>After_Delete__c</columns>
+    <columns>After_Undelete__c</columns>
+    <filterScope>Everything</filterScope>
+    <label>All Trigger Controllers</label>
+    <language>en_US</language>
+</ListView>
