@@ -5,7 +5,7 @@ A simplified trigger framework to extract logic from triggers, with uni-directio
 ## How do I make a trigger?
 
 Start by creating a trigger handler class. This must extend the TriggerHandler class:
-```
+```Java
 public without sharing class MyTriggerHandler extends TriggerHandler {
 }
 ```
@@ -21,7 +21,7 @@ The following methods are available to override:
 + afterUndelete
 
 For example:
-```
+```Java
 public override void beforeUpdate() {
     //Get new and old records
     List<Case> newCases = (List<Case>)Trigger.new,
@@ -32,7 +32,7 @@ public override void beforeUpdate() {
 ```
 
 Next, create a trigger for the object and instantiate your trigger handler:
-```
+```Java
 trigger ScheduleObjectTrigger on Case(before update) {
     new MyTriggerHandler();
 }
@@ -71,7 +71,7 @@ When a record is undeleted, a child record is re-created (not restored from the 
 ## Synchronisation Example
 
 Here is a test class that shows how easy it is to synchronise two records:
-```
+```Java
 public without sharing class SyncCaseAndTask extends RecordSync {
     public override Schema.DescribeSObjectResult getObjectType() {
         //This returns the type of object that needs to be created
@@ -104,7 +104,7 @@ public without sharing class SyncCaseAndTask extends RecordSync {
 ```
 
 This should then be followed by a trigger:
-```
+```Java
 trigger RecordSyncTestTrigger on Case (after insert, after update, before delete, after undelete) {
     new SyncCaseAndTask();
 }
