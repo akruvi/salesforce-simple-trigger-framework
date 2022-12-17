@@ -65,6 +65,12 @@ Enter Setup -> Custom Metadata Types and select the Trigger Controller object.
 Create a new record. In the Master Label field, enter the name of your trigger handler class (for example: MyTriggerHandler).
 Use the checkboxes to activate or deactivate specific trigger events.
 
+Triggers can be deactivated globally, for a single username, profile, role, or permission set. Use the Applies To (Type) and Applies To (Value) to control this. For example, to deactivate a trigger for the System Administrator profile, select:
+Applies To (Type): Profile
+Applies To (Value): System Administrator
+
+In the event of a clash (for example, one controller affects a user's profile and another affects their role), then the most restrictive options win (disabled triggers win over enabled ones).
+
 ## About Uni-Directional Record Synchronisation
 
 This feature allows you to create a trigger on any object that creates a parallel, always-synchronised record in another object.
