@@ -2,6 +2,12 @@
 
 A simplified trigger framework to extract logic from triggers, with uni-directional data synchronisation built-in.
 
+## Deployment
+
+<a href="https://githubsfdeploy.herokuapp.com/app/githubdeploy/akruvi/salesforce-simple-trigger-framework">
+  <img src="https://raw.githubusercontent.com/afawcett/githubsfdeploy/master/src/main/webapp/resources/img/deploy.png" alt="Deploy to Salesforce" />
+</a>
+
 ## How do I make a trigger?
 
 Start by creating a trigger handler class. This must extend the TriggerHandler class:
