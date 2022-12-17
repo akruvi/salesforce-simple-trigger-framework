@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Applies_To_Value</fullName>
+    <active>true</active>
+    <errorConditionFormula>AND (
+    TEXT(Applies_To_Type__c) != &apos;Everyone&apos;,
+    ISBLANK(Applies_To_Value__c)
+)</errorConditionFormula>
+    <errorDisplayField>Applies_To_Value__c</errorDisplayField>
+    <errorMessage>When selecting configuration to apply to anything other than Everyone, please specify a relevant username, profile name, role, or permission set for the configuration to apply.</errorMessage>
+</ValidationRule>
