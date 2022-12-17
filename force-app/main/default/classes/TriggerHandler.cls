@@ -139,9 +139,9 @@ global virtual class TriggerHandler {
 			if (trig.Applies_To_Type__c == APPLIES_TO_PROFILE) {
 				return trig.Applies_To_Value__c.equalsIgnoreCase(this.profileName);
 			} else if (trig.Applies_To_Type__c == APPLIES_TO_ROLE) {
-				return this.roleNames.add(trig.Applies_To_Value__c);
+				return this.roleNames.contains(trig.Applies_To_Value__c);
 			} else if (trig.Applies_To_Type__c == APPLIES_TO_PERM_SET) {
-				return this.permSets.add(trig.Applies_To_Value__c);
+				return this.permSets.contains(trig.Applies_To_Value__c);
 			} else if (trig.Applies_To_Type__c == APPLIES_TO_USER) {
 				return trig.Applies_To_Value__c.equalsIgnoreCase(this.userName);
 			}
