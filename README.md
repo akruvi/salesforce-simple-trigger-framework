@@ -5,7 +5,7 @@ A simplified trigger framework to extract logic from triggers, with uni-directio
 ## How do I make a trigger?
 
 Start by creating a trigger handler class. This must extend the TriggerHandler class:
-```Java
+```Apex
 public without sharing class MyTriggerHandler extends TriggerHandler {
 }
 ```
@@ -21,7 +21,7 @@ The following methods are available to override:
 + afterUndelete
 
 For example:
-```Java
+```Apex
 public override void beforeUpdate() {
     //Get new and old records
     List<Case> newCases = (List<Case>)Trigger.new,
@@ -32,13 +32,25 @@ public override void beforeUpdate() {
 ```
 
 Next, create a trigger for the object and instantiate your trigger handler:
-```Java
+```Apex
 trigger ScheduleObjectTrigger on Case(before update) {
     new MyTriggerHandler();
 }
 ```
 
 Done. Simple, right?
+
+## Exception Handling
+
+By default, exceptions in the trigger are thrown back and crash the current transaction. The error handler can be overridden to implement custom functionality or to ignore the exception altogether:
+
+```Apex
+public override void onError(Exception e) {
+    //Handle exception here
+}
+```
+
+My personal approach is that most trigger errors should not block the entire transaction, so creating an onError handler that does not throw the exception (and perhaps logs or reports it via email) is recommended. But I'm not your mother, I can't tell you what to do.
 
 ## Enabling and Disabling Trigger Functionality via Metadata
 
@@ -71,7 +83,7 @@ When a record is undeleted, a child record is re-created (not restored from the 
 ## Synchronisation Example
 
 Here is a test class that shows how easy it is to synchronise two records:
-```Java
+```Apex
 public without sharing class SyncCaseAndTask extends RecordSync {
     public override Schema.DescribeSObjectResult getObjectType() {
         //This returns the type of object that needs to be created
@@ -104,7 +116,7 @@ public without sharing class SyncCaseAndTask extends RecordSync {
 ```
 
 This should then be followed by a trigger:
-```Java
+```Apex
 trigger RecordSyncTestTrigger on Case (after insert, after update, before delete, after undelete) {
     new SyncCaseAndTask();
 }
@@ -113,3 +125,5 @@ trigger RecordSyncTestTrigger on Case (after insert, after update, before delete
 ## Who wasted their time writing this garbage?
 
 This garbage was written by Amnon Kruvi, whom you can reach for assistance at amnon@kruvi.co.uk
+
+And if you're involved in a project for managing shift workers or field service, why not give [Isimio](https://www.isimio.com) a try?
