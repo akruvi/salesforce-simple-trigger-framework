@@ -20,7 +20,7 @@ public class RecordSync_Test {
         Test.stopTest();
 
         //Verify tasks were created
-        cases = [SELECT Id, Subject, (SELECT Subject, Description, Status FROM Tasks) FROM Case];
+        cases = [SELECT Id, Subject, (SELECT Subject, Description, Status, Priority FROM Tasks) FROM Case];
 
         Assert.areEqual(5, cases.size(), 'Some cases were not created or loaded successfully');
         for (Case c : cases) {
@@ -28,6 +28,7 @@ public class RecordSync_Test {
             Assert.areEqual('Complete the case', c.Tasks[0].Subject, 'Task subject was not set correctly from a constant string value');
             Assert.areEqual(c.Subject, c.Tasks[0].Description, 'Description was not set correctly from the case Subject');
             Assert.areEqual('In Progress', c.Tasks[0].Status, 'Status was not set correctly from a callable class');
+            Assert.areEqual('High', c.Tasks[0].Priority, 'Priority was not set correctly from a callable instance');
         }
 
         //Update case subjects
@@ -37,7 +38,7 @@ public class RecordSync_Test {
         update cases;
 
         //Verify tasks were updated correctly
-        cases = [SELECT Id, Subject, (SELECT Subject, Description, Status FROM Tasks) FROM Case];
+        cases = [SELECT Id, Subject, (SELECT Subject, Description, Status, Priority FROM Tasks) FROM Case];
 
         Assert.areEqual(5, cases.size(), 'Some cases were not created or loaded successfully');
         for (Case c : cases) {
@@ -45,6 +46,7 @@ public class RecordSync_Test {
             Assert.areEqual('Complete the case', c.Tasks[0].Subject, 'Task subject was not set correctly from a constant string value');
             Assert.areEqual(c.Subject, c.Tasks[0].Description, 'Description was not set correctly from the case Subject');
             Assert.areEqual('In Progress', c.Tasks[0].Status, 'Status was not set correctly from a callable class');
+            Assert.areEqual('High', c.Tasks[0].Priority, 'Priority was not set correctly from a callable instance');
         }
     }
 
@@ -72,7 +74,7 @@ public class RecordSync_Test {
         Test.stopTest();
         
         //Verify tasks were re-created
-        cases = [SELECT Id, Subject, (SELECT Subject, Description, Status FROM Tasks) FROM Case];
+        cases = [SELECT Id, Subject, (SELECT Subject, Description, Status, Priority FROM Tasks) FROM Case];
 
         Assert.areEqual(5, cases.size(), 'Some cases were not created or loaded successfully');
         for (Case c : cases) {
@@ -80,6 +82,7 @@ public class RecordSync_Test {
             Assert.areEqual('Complete the case', c.Tasks[0].Subject, 'Task subject was not set correctly from a constant string value');
             Assert.areEqual(c.Subject, c.Tasks[0].Description, 'Description was not set correctly from the case Subject');
             Assert.areEqual('In Progress', c.Tasks[0].Status, 'Status was not set correctly from a callable class');
+            Assert.areEqual('High', c.Tasks[0].Priority, 'Priority was not set correctly from a callable instance');
         }
 
         //Delete cases
@@ -114,7 +117,7 @@ public class RecordSync_Test {
         Test.stopTest();
         
         //Verify tasks were re-created
-        cases = [SELECT Id, Subject, (SELECT Subject, Description, Status FROM Tasks) FROM Case];
+        cases = [SELECT Id, Subject, (SELECT Subject, Description, Status, Priority FROM Tasks) FROM Case];
 
         Assert.areEqual(5, cases.size(), 'Some cases were not created or loaded successfully');
         for (Case c : cases) {
@@ -122,6 +125,7 @@ public class RecordSync_Test {
             Assert.areEqual('Complete the case', c.Tasks[0].Subject, 'Task subject was not set correctly from a constant string value');
             Assert.areEqual(c.Subject, c.Tasks[0].Description, 'Description was not set correctly from the case Subject');
             Assert.areEqual('In Progress', c.Tasks[0].Status, 'Status was not set correctly from a callable class');
+            Assert.areEqual('High', c.Tasks[0].Priority, 'Priority was not set correctly from a callable instance');
         }
     }
 
@@ -148,7 +152,7 @@ public class RecordSync_Test {
         Id ignoredCaseId = cases[4].Id;
 
         //Verify tasks were created
-        cases = [SELECT Id, Subject, (SELECT Subject, Description, Status FROM Tasks) FROM Case];
+        cases = [SELECT Id, Subject, (SELECT Subject, Description, Status, Priority FROM Tasks) FROM Case];
 
         Assert.areEqual(5, cases.size(), 'Some cases were not created or loaded successfully');
         for (Case c : cases) {
@@ -161,6 +165,7 @@ public class RecordSync_Test {
                 Assert.areEqual('Complete the case', c.Tasks[0].Subject, 'Task subject was not set correctly from a constant string value');
                 Assert.areEqual(c.Subject, c.Tasks[0].Description, 'Description was not set correctly from the case Subject');
                 Assert.areEqual('In Progress', c.Tasks[0].Status, 'Status was not set correctly from a callable class');
+                Assert.areEqual('High', c.Tasks[0].Priority, 'Priority was not set correctly from a callable instance');
             }
         }
 
@@ -171,7 +176,7 @@ public class RecordSync_Test {
         Id ignoredCaseId2 = cases[0].Id;
 
         //Verify that the task belonging to this case was deleted
-        cases = [SELECT Id, Subject, (SELECT Subject, Description, Status FROM Tasks) FROM Case];
+        cases = [SELECT Id, Subject, (SELECT Subject, Description, Status, Priority FROM Tasks) FROM Case];
 
         Assert.areEqual(5, cases.size(), 'Some cases were not created or loaded successfully');
         for (Case c : cases) {
@@ -185,6 +190,7 @@ public class RecordSync_Test {
                 Assert.areEqual('Complete the case', c.Tasks[0].Subject, 'Task subject was not set correctly from a constant string value');
                 Assert.areEqual(c.Subject, c.Tasks[0].Description, 'Description was not set correctly from the case Subject');
                 Assert.areEqual('In Progress', c.Tasks[0].Status, 'Status was not set correctly from a callable class');
+                Assert.areEqual('High', c.Tasks[0].Priority, 'Priority was not set correctly from a callable instance');
             }
         }
     }

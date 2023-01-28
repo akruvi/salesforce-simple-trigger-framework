@@ -11,12 +11,26 @@ global abstract class RecordSync extends TriggerHandler {
     private Map<String, Callable> CALLABLE_CACHE;
 
     private Object getParentValue(SObject record, Object value, String childField, List<SObject> allRecords) {
+        //Process the value based on the type of object it is
         if (value instanceof Schema.SObjectField) {
+            //Field: get the field value from the record
             return record.get((Schema.SObjectField)value);
         } else if (value instanceof Type) {
+            //Class: instantiate and execute the class
             return runCallable(record, value, childField, allRecords);
+        } else if (value instanceof Callable) {
+            //Callable instance: execute the instance as-is
+            return runCallableInstance(record, (Callable)value, childField, allRecords);
         }
         return value;
+    }
+
+    private Object runCallableInstance(SObject record, Callable callableInstance, String childField, List<SObject> allRecords) {
+        return callableInstance.call('Calculate', new Map<String, Object> {
+            'record' => record,
+            'allRecords' => allRecords,
+            'field' => childField
+        });
     }
 
     private Object runCallable(SObject record, Object value, String childField, List<SObject> allRecords) {
@@ -37,13 +51,11 @@ global abstract class RecordSync extends TriggerHandler {
         CALLABLE_CACHE.put(childField, inst);
 
         //Execute callable
-        return inst.call('Calculate', new Map<String, Object> {
-            'record' => record,
-            'allRecords' => allRecords
-        });
+        return runCallableInstance(record, inst, childField, allRecords);
     }
 
     global virtual Boolean shouldSync(SObject record) {
+        //Override this method to determine which parent records should synchronise (assume all)
         return true;
     }
 

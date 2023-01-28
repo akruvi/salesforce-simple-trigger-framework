@@ -18,7 +18,8 @@ public without sharing class RecordSyncHandlerTest extends RecordSync {
             'Subject' => 'Complete the case',
             'WhatId' => Case.fields.Id,
             'Description' => Case.fields.Subject,
-            'Status' => RecordSyncTestCallable.class
+            'Status' => RecordSyncTestCallable.class,
+            'Priority' => new RecordSyncTestCallable()
         };
     }
 }
