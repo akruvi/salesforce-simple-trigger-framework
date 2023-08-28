@@ -194,4 +194,56 @@ public class RecordSync_Test {
             }
         }
     }
+
+    @IsTest static void testAsynchronousCreate() {
+        RecordSyncHandlerTest.TEST_RECORD_SYNC = true;
+
+        //Set trigger handler to run asynchronously
+        //The rest of the logic doesn't need to be changed, the same results should continue to apply
+        RecordSyncHandlerTest.ASYNC_MODE = true;
+
+        //Create new cases
+        List<Case> cases = new List<Case>();
+        for (Integer i=0;i < 5;i++) {
+            cases.add(
+                new Case(
+                    Subject = 'Test Case ' + (i+1)
+                )
+            );
+        }
+
+        Test.startTest();
+        insert cases;
+        Test.stopTest();
+
+        //Verify tasks were created
+        cases = [SELECT Id, Subject, (SELECT Subject, Description, Status, Priority FROM Tasks) FROM Case];
+
+        Assert.areEqual(5, cases.size(), 'Some cases were not created or loaded successfully');
+        for (Case c : cases) {
+            Assert.areEqual(1, c.Tasks.size(), 'Task was not created for case, or too many tasks created');
+            Assert.areEqual('Complete the case', c.Tasks[0].Subject, 'Task subject was not set correctly from a constant string value');
+            Assert.areEqual(c.Subject, c.Tasks[0].Description, 'Description was not set correctly from the case Subject');
+            Assert.areEqual('In Progress', c.Tasks[0].Status, 'Status was not set correctly from a callable class');
+            Assert.areEqual('High', c.Tasks[0].Priority, 'Priority was not set correctly from a callable instance');
+        }
+
+        //Update case subjects
+        for (Case c : cases) {
+            c.Subject = 'Updated subject';
+        }
+        update cases;
+
+        //Verify tasks were updated correctly
+        cases = [SELECT Id, Subject, (SELECT Subject, Description, Status, Priority FROM Tasks) FROM Case];
+
+        Assert.areEqual(5, cases.size(), 'Some cases were not created or loaded successfully');
+        for (Case c : cases) {
+            Assert.areEqual(1, c.Tasks.size(), 'Task was not created for case, or too many tasks created');
+            Assert.areEqual('Complete the case', c.Tasks[0].Subject, 'Task subject was not set correctly from a constant string value');
+            Assert.areEqual(c.Subject, c.Tasks[0].Description, 'Description was not set correctly from the case Subject');
+            Assert.areEqual('In Progress', c.Tasks[0].Status, 'Status was not set correctly from a callable class');
+            Assert.areEqual('High', c.Tasks[0].Priority, 'Priority was not set correctly from a callable instance');
+        }
+    }
 }

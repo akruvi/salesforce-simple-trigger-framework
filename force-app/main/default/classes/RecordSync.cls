@@ -1,8 +1,9 @@
 /* Copyright: Amnon Kruvi, Kruvi Solutions, 30/08/2022 */
-global abstract class RecordSync extends TriggerHandler {
+global abstract class RecordSync extends TriggerHandler implements Queueable {
     private Schema.DescribeSObjectResult objectType;
     private Map<String, Object> fieldMapping;
     private Map<String, Callable> callableCache;
+    private List<SObject> records;
 
     private static Boolean isTest = Test.isRunningTest();
     
@@ -61,6 +62,11 @@ global abstract class RecordSync extends TriggerHandler {
         return true;
     }
 
+    global virtual Boolean isAsynchronous(List<SObject> records) {
+        //Override this method to create asynchronous synchronisation
+        return false;
+    }
+
     public override void afterInsert() {
         synchronise(Trigger.new);
     }
@@ -69,7 +75,7 @@ global abstract class RecordSync extends TriggerHandler {
         afterInsert();
     }
 
-    private Map<Id, SObject> loadExistingRecords(List<SObject> records, String idField) {
+    private Map<Object[], SObject> loadExistingRecords(List<SObject> records, String idField, String parentRelationalField) {
         //Make a list of fields we need to query from the child object
         Set<String> childFields = new Set<String>();
         for (String childField : fieldMapping.keySet()) {
@@ -78,20 +84,37 @@ global abstract class RecordSync extends TriggerHandler {
         childFields.add(idField.toLowerCase());
         childFields.add('id');
 
+        //If the records are linked on the parent side as well, query those directly (to allow bi-directional sync)
+        Set<Id> directlyRelatedRecords = new Set<Id>();
+        if (parentRelationalField != null) {
+            for (SObject record : records) {
+                Id idValue = (Id)record.get(parentRelationalField);
+                if (idValue != null) {
+                    directlyRelatedRecords.add(idValue);
+                }
+            }
+        }
+
         //Query all the existing child records alongside their field values
         List<SObject> childRecords;
         try {
-            childRecords = Database.Query('SELECT ' + String.join(new List<String>(childFields), ',') + ' FROM ' + objectType.getName() + ' WHERE ' + idField + ' IN :records');
+            childRecords = Database.Query('SELECT ' + String.join(new List<String>(childFields), ',') + ' FROM ' + objectType.getName() + ' WHERE ' + idField + ' IN :records OR Id IN :directlyRelatedRecords');
         } catch (QueryException e) {
             //This could happen if the ID field was also mapped to another field but without the namespace
             childFields.remove(idField.toLowerCase());
-            childRecords = Database.Query('SELECT ' + String.join(new List<String>(childFields), ',') + ' FROM ' + objectType.getName() + ' WHERE ' + idField + ' IN :records');
+            childRecords = Database.Query('SELECT ' + String.join(new List<String>(childFields), ',') + ' FROM ' + objectType.getName() + ' WHERE ' + idField + ' IN :records OR Id IN :directlyRelatedRecords');
         }
 
         //Map records by parent ID
-        Map<Id, SObject> mapChildren = new Map<Id, SObject>();
+        Map<Object[], SObject> mapChildren = new Map<Object[], SObject>();
         for (SObject child : childRecords) {
-            mapChildren.put((Id)child.get(idField), child);
+            Id idValue = (Id)child.get(idField);
+
+            //Map the child record by the parent ID
+            mapChildren.put(new Object[] {1, idValue}, child);
+            
+            //Map the child record by its record ID
+            mapChildren.put(new Object[] {2, child.Id}, child);
         }
 
         return mapChildren;
@@ -102,6 +125,34 @@ global abstract class RecordSync extends TriggerHandler {
     }
 
     global void synchronise(List<SObject> newRecords) {
+        //If we're running in a synchronous context, and the
+        //process is meant to run asynchronously, call the
+        //future method. Otherwise, run it immediately.
+        if (!System.isFuture() && 
+            !System.isBatch() &&
+            !System.isQueueable() &&
+            !System.isScheduled() &&
+            isAsynchronous(newRecords)) {
+            //Asynchronous
+            synchroniseFuture(newRecords);
+        } else {
+            //Synchronous
+            synchroniseNow(newRecords);
+        }
+    }
+
+    global void synchroniseFuture(List<SObject> newRecords) {
+        //Enqueue this job for future processing
+        this.records = newRecords;
+        System.enqueueJob(this);
+    }
+
+    public void execute(QueueableContext ctx) {
+        //Process enqueued records
+        synchroniseNow(this.records);
+    }
+
+    global void synchroniseNow(List<SObject> newRecords) {
         this.objectType = this.getObjectType();
         this.fieldMapping = this.getFieldMapping();
 
@@ -111,7 +162,8 @@ global abstract class RecordSync extends TriggerHandler {
 
         //Load existing child records relating to the changed records
         String idField = this.getChildRelationalField().getName();
-        Map<Id, SObject> mapChildren = loadExistingRecords(newRecords, idField);
+        String parentRelationalField = getParentRelationalField()?.getName();
+        Map<Object[], SObject> mapChildren = loadExistingRecords(newRecords, idField, parentRelationalField);
 
         //Iterate over the records to see which ones changed
         Schema.SObjectType objType = objectType.getSObjectType();
@@ -121,7 +173,15 @@ global abstract class RecordSync extends TriggerHandler {
             SObject newRec = newRecords[i];
 
             //Fetch child record
-            SObject childRecord = mapChildren.get(newRec.Id);
+            SObject childRecord = mapChildren.get(new Object[] {1, newRec.Id});
+            if (childRecord == null && 
+                parentRelationalField != null) {
+                //Child record not found, but there is a parent relationship: look for the record from there
+                Id childRecordId = (Id)newRec.get(parentRelationalField);
+                if (childRecordId != null) {
+                    childRecord = mapChildren.get(new Object[] {2, childRecordId});
+                }
+            }
 
             if (this.shouldSync(newRec)) {
                 if (childRecord != null) {
@@ -174,9 +234,7 @@ global abstract class RecordSync extends TriggerHandler {
         Database.delete(toDelete, isTest);
 
         //Link the parent to any newly created child records
-        Schema.DescribeFieldResult parentRelationalField = getParentRelationalField();
         if (parentRelationalField != null) {
-            Schema.SObjectField field = parentRelationalField.getSobjectField();
             toUpdate = new List<SObject>();
 
             //Map all records by ID
@@ -189,9 +247,9 @@ global abstract class RecordSync extends TriggerHandler {
             for (SObject newRecord : toInsert) {
                 Id parentId = (Id)newRecord.get(getChildRelationalField().getSobjectField());
                 SObject parent = newRecordsMap.get(parentId);
-                if (parent.get(field) != newRecord.Id) {
+                if (parent != null && parent.get(parentRelationalField) != newRecord.Id) {
                     SObject recordToUpdate = newRecords[0].getSObjectType().newSObject(parentId);
-                    recordToUpdate.put(field, newRecord.Id);
+                    recordToUpdate.put(parentRelationalField, newRecord.Id);
                     toUpdate.add(recordToUpdate);
                 }
             }
