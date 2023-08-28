@@ -1,6 +1,11 @@
 # Salesforce Simple Trigger Framework and Record Sync
 
-A simplified trigger framework to extract logic from triggers, with uni-directional data synchronisation built-in.
+A simplified trigger framework to extract logic from triggers, with an added feature of synchronising between two records uni or bi-directionally.
+
+## Features
++ Apex triggers are kept to one line, and logic is extracted into conveniently-formatted classes.
++ Control trigger activation by user, profile, role, or permission set, and for each individual trigger event.
++ Automatically create and synchronise a child record, either one-way or two-ways. Records are kept in-sync after insert, update, delete, and undelete.
 
 ## Deployment
 
@@ -108,10 +113,24 @@ public without sharing class SyncCaseAndTask extends RecordSync {
         return Schema.SObjectType.Task.fields.WhatId;
     }
 
+    public override Schema.DescribeFieldResult getParentRelationalField() {
+        //Implement this method to write the ID of the generated child record
+        //into a field on the original, parent record. Also required for two-
+        //way synchronisation.
+        return Schema.SObjectType.Case.fields.Primary_Task_ID__c;
+    }
+
     public override Boolean shouldSync(SObject record) {
         //Implement this method to only synchronise records conditionally.
         //If true, the parent record will create a child record.
         return (String)record.get('Subject') != 'Delete me';
+    }
+
+    public override Boolean isAsynchronous(List<SObject> records) {
+        //Implement this method to optionally execute synchronisation
+        //as an asynchronous, queueable class. This will run in a new transaction.
+        //Note that there are Apex governor limits on asynchronous executions.
+        return false;
     }
 
     public override Map<String, Object> getFieldMapping() {
@@ -134,8 +153,15 @@ trigger RecordSyncTestTrigger on Case (after insert, after update, before delete
 }
 ```
 
+## Bi-Directional Synchronisation
+
+Sometimes, you may want records to synchronise bi-directionally. Meaning, if the parent record changes, so will the child. And if the child record changes, so should the parent. This can be implemented by having two triggers, one on each object, that both synchronise one object into the other. In our example, we may choose to create a trigger on the Task object that syncronises back into a case.
+
+For this to work, both triggers must implement the getParentRelationalField function. This ensures that the newly-created child record does not create another child of its own, but instead synchronises with the parent record. By definition, this means that both synchronised objects must have lookup fields pointing to one another (in a fictional world where SObjects can have lookups to activities).
+
 ## Who wasted their time writing this garbage?
 
 This garbage was written by Amnon Kruvi, whom you can reach for assistance at amnon@kruvi.co.uk
 
 And if you're involved in a project for managing shift workers or field service, why not give [Isimio](https://www.isimio.com) a try?
+Or if you're looking for Salesforce architectural support, implementation, or managed services, reach out to [The Architech Club](https://architechclub.com).
